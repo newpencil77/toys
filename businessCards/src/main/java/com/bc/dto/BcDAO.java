@@ -46,6 +46,34 @@ public class BcDAO
         
     }
     
+    public int getMaxNum()
+    {
+        getConnection();
+        
+        String sql="SELECT max(num) FROM businesscard";
+        int maxNum=0;
+        
+        try(Statement st = con.createStatement(); ResultSet rs= st.executeQuery(sql))
+        {
+            if(rs.next())
+            {
+             maxNum= rs.getInt(1);   
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            closeCon();
+        }
+        
+        return maxNum;
+    }
+    
+    
+    
     public void addCard(BusinessCards bc)
     {
          
@@ -69,7 +97,7 @@ public class BcDAO
         }
         finally
         {
-            closeCon(con, null);
+            closeCon();
         }
     }
     
@@ -89,23 +117,86 @@ public class BcDAO
         }
         finally
         {
-            closeCon(con, null);
+            closeCon();
         }
+        
     }
     
     
-    public List<BusinessCards> searchCard(String name)
+    public List<BusinessCards> viewAllCards()
+    {
+        getConnection();
+        String sql="SELECT * FROM businesscard";
+        
+        BusinessCards bc= null;
+        List<BusinessCards> arr = new ArrayList< >();
+        
+        try(Statement st= con.createStatement(); ResultSet rs = st.executeQuery(sql))
+        {
+            while(rs.next())
+            {
+                bc= new BusinessCards();
+                bc.setNum(rs.getInt("num"));
+                bc.setName(rs.getString("name"));
+                bc.setTel(rs.getString("tel"));
+                bc.setEmail(rs.getString("email"));
+                
+                arr.add(bc);
+            }
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            closeCon();
+        }
+        
+        return arr;
+    }
+    
+    public BusinessCards searchCard(int num)
+    {
+        getConnection();
+        BusinessCards bc =null;
+        String sql="SELECT * FROM businesscard WHERE num="+num;
+        try(Statement st= con.createStatement(); ResultSet rs= st.executeQuery(sql))
+        {
+            if(rs.next())
+            {
+                bc= new BusinessCards();
+                bc.setNum(rs.getInt("num"));
+                bc.setName(rs.getString("name"));
+                bc.setTel(rs.getString("tel"));
+                bc.setEmail(rs.getString("email"));
+            }
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+            
+        }
+        
+        finally
+        {
+            closeCon();
+        }
+        
+        return bc;
+    }
+    
+    public List<BusinessCards> searchCard(String pram, String contents)
     {
         getConnection();
         
-        ResultSet rs = null;
+        
         List<BusinessCards> arr= new ArrayList< >();
         
-        String sql="SELECT * FROM businesscard WHERE name LIKE '%"+name+"%'";
+        String sql="SELECT * FROM businesscard WHERE "+pram+ " LIKE '%"+contents+"%'";
         
-        try(Statement st = con.createStatement();)
+        try(Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql))
         {
-            rs = st.executeQuery(sql);
            
             while(rs.next())
             {
@@ -126,18 +217,44 @@ public class BcDAO
         }
         finally
         {
-            closeCon(con, rs);
+            closeCon();
         }
         return arr;
     }
     
     
-    private void closeCon(Connection con, ResultSet rs)
+    
+    
+    public void updateCard(BusinessCards bc)
+    {
+        
+        getConnection();
+        String sql="UPDATE businesscard SET name=?, tel=?, email=? WHERE num=?";
+        
+        try(PreparedStatement ps = con.prepareStatement(sql))
+        {
+            ps.setString(1, bc.getName());
+            ps.setString(2, bc.getTel());
+            ps.setString(3, bc.getEmail());
+            ps.setInt(4, bc.getNum());
+            
+            ps.executeUpdate();
+        }
+        catch (SQLException e)
+        {
+           e.printStackTrace();       
+        }
+        finally
+        {
+            closeCon();
+        }
+    }
+    
+    
+    private void closeCon()
     {
         try
         { 
-            if(rs!=null)
-                rs.close();
             if(con!=null) 
                 con.close();
         }
